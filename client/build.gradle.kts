@@ -19,6 +19,7 @@ plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.dokka)
     jacoco
+    alias(libs.plugins.openapi)
 }
 
 val javaVersion = libs.versions.java.get()
@@ -28,12 +29,34 @@ kotlin {
 }
 
 dependencies {
+    implementation(libs.okhttp)
+    implementation(libs.retrofit.core)
+    implementation(libs.retrofit.converter.moshi)
+    implementation(libs.logging.interceptor)
+
+    implementation(libs.moshi.core)
+    implementation(libs.moshi.kotlin)
+
     testImplementation(libs.kotlin.test)
     testImplementation(libs.junit.aggregator)
     testRuntimeOnly(libs.junit.engine)
     testRuntimeOnly(libs.junit.platform)
 }
 
+val targetDir = layout.buildDirectory.dir("generated/openapi").get().asFile.toString()
+
+openApiGenerate {
+    generatorName = "kotlin"
+    inputSpec.set("$projectDir/src/main/resources/codebreaker.yaml")
+    outputDir.set(targetDir)
+    apiPackage = "edu.cnm.deepdive.codebreaker.web"
+    modelPackage = "edu.cnm.deepdive.codebreaker.dto"
+    library = "jvm-retrofit"
+
+    configOptions.set(
+        mapOf(/* TODO Add configuration options */)
+    )
+}
 
 tasks.test {
     useJUnitPlatform()

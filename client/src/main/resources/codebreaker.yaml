@@ -1,0 +1,291 @@
+openapi: 3.0.3
+info:
+  title: Codebreaker Solitaire API
+  description: |
+    A simple game of deductive reasoning—a more generalized variant of the board game Mastermind 
+    and the earlier pencil-and-paper game Bulls and Cows—implemented as a RESTful service.
+  version: 4.1.2
+  contact:
+    name: Nicholas Bennett
+    email: nick@nickbenn.com
+servers:
+  - url: https://ddc-java.services/codebreaker-solitaire
+    description: Production Service Endpoint
+paths:
+  /games:
+    post:
+      summary: Start new game
+      description: Starts a new game, randomly generating a secret code using the properties specified in the request body.
+      operationId: startGame
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GameRequest'
+      responses:
+        '201':
+          description: Code generated & game started successfully.
+          headers:
+            Location:
+              description: Absolute URL of the newly created game resource.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameResponse'
+        '400':
+          description: Invalid code length or character pool.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /games/{gameId}:
+    get:
+      summary: Retrieve a game
+      description: Returns the game with the unique identifier specified by gameId.
+      operationId: getGame
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          description: Unique identifier of game resource.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Specified game returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GameResponse'
+        '404':
+          description: No game exists with an id equal to the specified gameId.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+                
+    delete:
+      summary: Delete a game
+      description: Deletes the game (and all related guesses) with the unique identifier gameId.
+      operationId: deleteGame
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          description: Unique identifier of game resource.
+          schema:
+            type: string
+      responses:
+        '204':
+          description: Specified game deleted.
+        '404':
+          description: No game exists with an id equal to the specified gameId.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /games/{gameId}/guesses:
+    post:
+      summary: Submit a guess
+      description: Submits a guess against the game specified by gameId.
+      operationId: submitGuess
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          description: Unique identifier of game resource.
+          schema:
+            type: string
+      requestBody:
+        required: true
+        content:
+          application/json:
+            schema:
+              $ref: '#/components/schemas/GuessRequest'
+      responses:
+        '201':
+          description: Guess submitted successfully.
+          headers:
+            Location:
+              description: Absolute URL of the newly submitted guess resource.
+              schema:
+                type: string
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuessResponse'
+        '400':
+          description: Length of guess doesn't match code length.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '404':
+          description: No game exists with an id equal to the specified gameId.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+        '409':
+          description: The game with the specified gameId is already completed; that is, the code has been guessed correctly.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+  /games/{gameId}/guesses/{guessId}:
+    get:
+      summary: Retrieve a guess
+      description: Returns the guess with the unique identifier guessId submitted in the game identified by gameId.
+      operationId: getGuess
+      parameters:
+        - name: gameId
+          in: path
+          required: true
+          description: Unique identifier of game resource.
+          schema:
+            type: string
+        - name: guessId
+          in: path
+          required: true
+          description: Unique identifier of guess resource.
+          schema:
+            type: string
+      responses:
+        '200':
+          description: Specified guess returned.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/GuessResponse'
+        '404':
+          description: No game exists with an id equal to the specified gameId, no guess identified by guessId exists, or guess identified by guessId is not associated with game identified by gameId.
+          content:
+            application/json:
+              schema:
+                $ref: '#/components/schemas/ErrorResponse'
+
+components:
+  schemas:
+    GameRequest:
+      type: object
+      required:
+        - pool
+        - length
+      properties:
+        pool:
+          type: string
+          description: Pool of available characters for code and guesses. Duplicated characters will be ignored. Null or unassigned characters (i.e. code point values not mapped to a Unicode character) are not allowed.
+        length:
+          type: integer
+          minimum: 1
+          maximum: 20
+          description: Length (in characters) of generated code. Valid range is 1 to 20.
+
+    GameResponse:
+      type: object
+      required:
+        - id
+        - created
+        - pool
+        - length
+        - solved
+        - guesses
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the game.
+        created:
+          type: string
+          format: date-time
+          description: Timestamp of code creation (start of game).
+        pool:
+          type: string
+          description: Pool of available characters for code (and guesses).
+        length:
+          type: integer
+          description: Length (in characters) of generated code.
+        solved:
+          type: boolean
+          description: Flag indicating whether code has been guessed successfully.
+        text:
+          type: string
+          description: Text of secret code. This is only included in responses for completed (solved) games.
+        guesses:
+          type: array
+          items:
+            $ref: '#/components/schemas/GuessResponse'
+          description: Array of guesses submitted in this game.
+
+    GuessRequest:
+      type: object
+      required:
+        - text
+      properties:
+        text:
+          type: string
+          description: Guess of code text.
+
+    GuessResponse:
+      type: object
+      required:
+        - id
+        - created
+        - text
+        - exactMatches
+        - nearMatches
+        - solution
+      properties:
+        id:
+          type: string
+          description: Unique identifier of the submitted guess.
+        created:
+          type: string
+          format: date-time
+          description: Timestamp of guess submission.
+        text:
+          type: string
+          description: Text of guess.
+        exactMatches:
+          type: integer
+          description: Count of characters in the guess that are in the same positions in the secret code.
+        nearMatches:
+          type: integer
+          description: Count of characters in the guess that are in secret code, but not in the same positions.
+        solution:
+          type: boolean
+          description: Flag indicating whether this guess exactly matches the secret code.
+
+    ErrorResponse:
+      type: object
+      required:
+        - timestamp
+        - status
+        - error
+        - message
+        - path
+      properties:
+        timestamp:
+          type: string
+          format: date-time
+          description: Timestamp of request.
+        status:
+          type: integer
+          description: HTTP response status code.
+        error:
+          type: string
+          description: HTTP response status text.
+        message:
+          type: string
+          description: Additional error message.
+        path:
+          type: string
+          description: Host-relative URL of request.
+        details:
+          type: object
+          description: Additional details, generally included with validation errors.
