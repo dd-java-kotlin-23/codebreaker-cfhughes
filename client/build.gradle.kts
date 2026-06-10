@@ -23,9 +23,20 @@ plugins {
 }
 
 val javaVersion = libs.versions.java.get()
+val targetDir = layout
+    .buildDirectory
+    .dir(properties["outputBaseDir"] as String)
+    .get()
+    .asFile
+    .toString()
 
 kotlin {
     jvmToolchain(javaVersion.toInt())
+    sourceSets {
+        main {
+            kotlin.srcDir("$targetDir/src/main/kotlin")
+        }
+    }
 }
 
 dependencies {
@@ -43,19 +54,33 @@ dependencies {
     testRuntimeOnly(libs.junit.platform)
 }
 
-val targetDir = layout.buildDirectory.dir("generated/openapi").get().asFile.toString()
-
 openApiGenerate {
-    generatorName = "kotlin"
-    inputSpec.set("$projectDir/src/main/resources/codebreaker.yaml")
+    generatorName = properties["generatorName"] as String
+    inputSpec.set("$projectDir/src/main/resources/${properties["openApiSpec"]}")
     outputDir.set(targetDir)
-    apiPackage = "edu.cnm.deepdive.codebreaker.web"
-    modelPackage = "edu.cnm.deepdive.codebreaker.dto"
-    library = "jvm-retrofit"
+    val basePackageName: String by project
+    apiPackage = "$basePackageName.web"
+    modelPackage = "$basePackageName.dto"
+    library = properties["httpLibrary"] as String
 
     configOptions.set(
-        mapOf(/* TODO Add configuration options */)
+        mapOf(
+            "collectionType" to properties["collectionType"] as String,
+            "dateLibrary" to properties["dateLibrary"] as String,
+            "serializationLibrary" to properties["serializationLibrary"] as String,
+            "useCoroutines" to properties["useCoroutines"] as String,
+            "enumPropertyNaming" to properties["enumPropertyNaming"] as String,
+        )
     )
+
+    generateModelTests = false
+    generateApiTests = false
+    generateModelDocumentation = false
+    generateApiDocumentation = false
+}
+
+tasks.compileKotlin {
+    dependsOn(tasks.openApiGenerate)
 }
 
 tasks.test {
