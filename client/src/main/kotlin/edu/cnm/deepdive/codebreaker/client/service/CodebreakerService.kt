@@ -18,4 +18,13 @@ interface CodebreakerService {
 
     fun getGuess(gameId: String, guessId: String): CompletableFuture<GuessResponse>
 
+    // TODO: Add shutdown function.
+
+    companion object {
+
+        @JvmStatic
+        val instance: CodebreakerService
+            get() = CodebreakerServiceImpl
+
+    }
 }
