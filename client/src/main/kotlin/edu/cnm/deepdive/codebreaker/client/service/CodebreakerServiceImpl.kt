@@ -145,7 +145,7 @@ private fun buildClient(properties: Properties): OkHttpClient {
 
 private fun buildApi(
     properties: Properties,
-    moshi: Moshi,
+    @Suppress("SameParameterValue") moshi: Moshi,
     @Suppress("SameParameterValue") client: OkHttpClient
 ): CodebreakerApi =
     Retrofit.Builder()
