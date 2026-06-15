@@ -2,12 +2,14 @@ package edu.cnm.deepdive.codebreaker.service;
 
 import edu.cnm.deepdive.codebreaker.client.dto.GameRequest;
 import edu.cnm.deepdive.codebreaker.client.dto.GameResponse;
+import edu.cnm.deepdive.codebreaker.client.dto.GuessRequest;
 import edu.cnm.deepdive.codebreaker.client.dto.GuessResponse;
 import edu.cnm.deepdive.codebreaker.client.service.CodebreakerProxy;
 import edu.cnm.deepdive.codebreaker.model.Game;
 import edu.cnm.deepdive.codebreaker.model.Guess;
 import java.util.ArrayList;
 import java.util.List;
+import java.util.Set;
 import java.util.concurrent.CompletableFuture;
 import java.util.stream.Collectors;
 import org.jetbrains.annotations.NotNull;
@@ -40,7 +42,13 @@ class CodebreakerServiceImpl implements CodebreakerService {
 
   @Override
   public CompletableFuture<Game> submitGuess(Game game, String text) {
-    return null;
+    return isGuessValid(game, text)
+        ? proxy.submitGuess(game.id(), new GuessRequest(text))
+          .thenApply((response) -> {
+            game.guesses().add(buildGuess(response));
+            return game;
+          })
+        : CompletableFuture.failedFuture(new IllegalArgumentException());
   }
 
   @Override
@@ -73,6 +81,16 @@ class CodebreakerServiceImpl implements CodebreakerService {
   private static Guess buildGuess(GuessResponse response) {
     return new Guess(response.getText(), response.getExactMatches(),
         response.getNearMatches(), response.getSolution(), response.getCreated());
+  }
+
+  private static boolean isGuessValid(Game game, String text) {
+    Set<Integer> poolCodePoints = game
+        .pool()
+        .codePoints()
+        .boxed()
+        .collect(Collectors.toSet());
+    return text.codePoints().count() == game.length()
+        && text.codePoints().allMatch(poolCodePoints::contains);
   }
 
 }
