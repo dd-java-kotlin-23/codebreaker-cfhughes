@@ -8,12 +8,10 @@ public record Game(String id, String pool, int length, List<Guess> guesses,
                    OffsetDateTime created) {
 
   public boolean solved() {
-    for (Guess guess : guesses) {
-      if (guess.solution()) {
-        return true;
-      }
-    }
-    return false;
+    //noinspection Convert2MethodRef // TODO Explore use of method reference.
+    return guesses
+        .stream()
+        .anyMatch((guess) -> guess.solution());
   }
 
 }
