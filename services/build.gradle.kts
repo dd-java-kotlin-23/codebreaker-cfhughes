@@ -28,6 +28,8 @@ kotlin {
 }
 
 dependencies {
+    implementation(project(":client"))
+
     testImplementation(libs.kotlin.test)
     testImplementation(libs.junit.aggregator)
     testRuntimeOnly(libs.junit.engine)
