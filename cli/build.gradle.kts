@@ -18,7 +18,9 @@ import org.gradle.api.tasks.testing.logging.TestLogEvent
 plugins {
     alias(libs.plugins.kotlin.jvm)
     alias(libs.plugins.dokka)
+    application
     jacoco
+    // TODO: Add plugins for fat jar.
 }
 
 val javaVersion = libs.versions.java.get()
@@ -27,7 +29,11 @@ kotlin {
     jvmToolchain(javaVersion.toInt())
 }
 
+// TODO: Configure main class of application.
+
 dependencies {
+    implementation(project(":services"))
+
     testImplementation(libs.kotlin.test)
     testImplementation(libs.junit.aggregator)
     testRuntimeOnly(libs.junit.engine)

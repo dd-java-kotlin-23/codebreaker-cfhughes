@@ -20,7 +20,11 @@ class CodebreakerServiceImpl implements CodebreakerService {
   private static final int MIN_LENGTH = 1;
   private static final int MAX_LENGTH = 20;
 
-  private final CodebreakerProxy proxy = CodebreakerProxy.getInstance(); // FIXME: 6/15/26 Use dependency injection.
+  private final CodebreakerProxy proxy; // FIXME: 6/15/26 Use dependency injection.
+
+  CodebreakerServiceImpl() {
+    proxy = CodebreakerProxy.getInstance();
+  }
 
   @Override
   public CompletableFuture<Game> startGame(String pool, int length) {
