@@ -52,7 +52,7 @@ class CodebreakerServiceImpl implements CodebreakerService {
           game.guesses().add(buildGuess(response));
           return game;
         })
-        : CompletableFuture.failedFuture(new InvalidGuessException());
+        : CompletableFuture.failedFuture(new InvalidGuessException(game, text));
   }
 
   @Override
