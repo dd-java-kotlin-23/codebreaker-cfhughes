@@ -52,6 +52,10 @@ public class CodebreakerViewModel {
         .exceptionally(this::handleError);
   }
 
+  public void shutdown() {
+    service.shutdown();
+  }
+
   @Nullable
   private Void handleError(Throwable throwable) {
     error = throwable;
